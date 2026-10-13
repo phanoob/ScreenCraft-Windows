@@ -127,7 +127,7 @@ No permissions need granting on Windows; camera and microphone follow the switch
 in Settings › Privacy & security. The recording shortcut is **Ctrl+Shift+2**, the
 other shortcuts use Ctrl where macOS uses ⌘, and the app lives in the notification
 area (system tray) instead of the menu bar. Settings are stored in
-`%APPDATA%\ScreenCraft`, exports default to the Videos folder.
+`%APPDATA%\ScreenCraft`; recordings and exports go to `Videos\ScreenCraft`.
 
 ## Using it
 

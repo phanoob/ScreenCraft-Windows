@@ -67,8 +67,36 @@ impl AppState {
             .projects_dir
             .clone()
             .map(PathBuf::from)
-            .unwrap_or_else(|| home().join("ScreenCraft Projects"))
+            .unwrap_or_else(default_projects_root)
     }
+}
+
+/// ~/ScreenCraft Projects on macOS; Videos\ScreenCraft on Windows.
+#[cfg(not(windows))]
+fn default_projects_root() -> PathBuf {
+    home().join("ScreenCraft Projects")
+}
+
+#[cfg(windows)]
+fn default_projects_root() -> PathBuf {
+    videos_dir().join("ScreenCraft")
+}
+
+/// The user's Videos folder, wherever it lives (it can be moved, e.g. to OneDrive).
+#[cfg(windows)]
+pub fn videos_dir() -> PathBuf {
+    use windows::Win32::System::Com::CoTaskMemFree;
+    use windows::Win32::UI::Shell::{FOLDERID_Videos, SHGetKnownFolderPath, KNOWN_FOLDER_FLAG};
+    unsafe {
+        if let Ok(p) = SHGetKnownFolderPath(&FOLDERID_Videos, KNOWN_FOLDER_FLAG(0), None) {
+            let s = p.to_string().ok();
+            CoTaskMemFree(Some(p.0 as *const _));
+            if let Some(s) = s.filter(|s| !s.is_empty()) {
+                return PathBuf::from(s);
+            }
+        }
+    }
+    home().join("Videos")
 }
 
 #[cfg(windows)]
