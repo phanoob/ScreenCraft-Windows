@@ -8,6 +8,14 @@ cuts, speed changes, background music and MP4 / GIF export.
 
 There are no AI features: just recording, camera, editing and zoom.
 
+> **Windows port of the original macOS app.** ScreenCraft was created by
+> **Marshall Nickolauson** as a macOS app:
+> [MarshallNickolauson/ScreenCraft](https://github.com/MarshallNickolauson/ScreenCraft)
+> (MIT license, see [LICENSE](LICENSE)). This repository keeps its full history and
+> its macOS code unchanged, and adds a Windows back end (`src-tauri/src/win`) plus the
+> small UI changes Windows needs. Credit for the app, its design and the macOS version
+> goes to the original author; issues with the Windows port belong here, not upstream.
+
 > **Not affiliated.** ScreenCraft is an independent, open project that is
 > *inspired by* the idea behind [Screen Studio](https://screen.studio). It is not
 > affiliated with, endorsed by, or connected to Screen Studio or its makers in any
