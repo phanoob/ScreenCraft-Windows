@@ -1,5 +1,6 @@
 // Access to the untouched recordings (raw screen / camera files).
 import { invoke, dialog, FILE_BROWSER } from "../tauri.js";
+import { t } from "../i18n.js";
 import { P, dir } from "./state.js";
 import { showMenu } from "./menus.js";
 
@@ -23,7 +24,7 @@ export function rawMenu(anchor) {
   if (m.camera) items.push({ label: "Save raw camera video as…", run: () => saveCopy(m.camera, "(raw camera)") });
   items.push(
     "-",
-    { label: `Show raw files in ${FILE_BROWSER}`, run: () => invoke("reveal_in_finder", { path: `${dir}/${m.screen}` }) },
+    { label: t("Show raw files in {app}", { app: t(FILE_BROWSER) }), run: () => invoke("reveal_in_finder", { path: `${dir}/${m.screen}` }) },
     { label: "Open raw video in compressor…", run: () => invoke("show_compressor", { input: `${dir}/${m.screen}` }) },
   );
   showMenu(anchor, items);

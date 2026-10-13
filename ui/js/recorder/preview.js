@@ -1,5 +1,6 @@
 // Live camera preview inside the toolbar (and a thumbnail in the HUD).
 import { $, state, showError } from "./state.js";
+import { t } from "../i18n.js";
 
 let preview = null;
 let drawLoop = 0;
@@ -78,7 +79,7 @@ export async function syncPreview() {
     $("optCamera").classList.add("live");
   } catch (e) {
     stopPreview();
-    showError("Camera preview unavailable: " + (e?.message || e));
+    showError(t("Camera preview unavailable: {e}", { e: e?.message || e }));
   }
 }
 

@@ -1,4 +1,5 @@
-import { invoke, listen } from "../tauri.js";
+import { invoke, listen, IS_WINDOWS } from "../tauri.js";
+import { t, languageItems } from "../i18n.js";
 import { $, state, RESOLUTIONS, FPS_CHOICES, savePrefs, showError, hooks } from "./state.js";
 import { win, showBar, enableDragging } from "./window.js";
 import { openMenu, closeMenu, isMenuOpen } from "./menu.js";
@@ -19,12 +20,16 @@ function render() {
   set("optMic", state.mic, state.mic ? state.micName || "Microphone" : "No microphone");
   set("optSys", state.sys, state.sys ? "System audio" : "No system audio");
   const res = RESOLUTIONS.find((r) => r.value === state.resolution) || RESOLUTIONS[0];
-  $("qualLabel").textContent = `${res.short} · ${state.fps} fps`;
+  $("qualLabel").textContent = `${t(res.short)} · ${state.fps} fps`;
   $("recLabel").textContent = "Record";
   syncPreview();
   syncMeters();
 }
 hooks.render = render;
+addEventListener("sc-langchange", render);
+
+/** "Main Display" / "Display 2", in the UI language. */
+const displayName = (d) => (d.isMain ? t("Main Display") : t("Display {n}", { n: d.name.match(/\d+$/)?.[0] ?? "" }));
 
 async function refreshSources() {
   try {
@@ -66,7 +71,7 @@ async function chooseMode(mode) {
       [
         { header: "Displays" },
         ...state.sources.displays.map((d) => ({
-          label: d.name, sub: `${d.width} × ${d.height}`, checked: state.displayId === d.id,
+          label: displayName(d), sub: `${d.width} × ${d.height}`, checked: state.displayId === d.id,
           onPick: () => { state.displayId = d.id; render(); },
         })),
       ],
@@ -101,6 +106,8 @@ async function folderMenu() {
         if (dir) await invoke("set_projects_dir", { path: Array.isArray(dir) ? dir[0] : dir });
       },
     },
+    { header: "Language" },
+    ...languageItems().map((l) => ({ label: l.label, checked: l.checked, onPick: l.pick })),
   );
   await openMenu(items, $("optFolder"));
 }
@@ -118,7 +125,11 @@ async function captureMenu() {
       { header: "Resolution" },
       ...RESOLUTIONS.map((r) => ({
         label: r.label,
-        sub: r.value ? dims(r.value) : d ? `${d.width * 2} × ${d.height * 2} on Retina` : "Full pixel size of the display",
+        sub: r.value
+          ? dims(r.value)
+          : d && !IS_WINDOWS
+            ? t("{w} × {h} on Retina", { w: d.width * 2, h: d.height * 2 })
+            : "Full pixel size of the display",
         checked: state.resolution === r.value,
         onPick: () => { state.resolution = r.value; savePrefs(); render(); },
       })),

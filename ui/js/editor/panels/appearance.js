@@ -1,5 +1,6 @@
 import { P, hooks } from "../state.js";
 import { invoke, dialog } from "../../tauri.js";
+import { t } from "../../i18n.js";
 import { change } from "../history.js";
 import { h3, el, slider, toggle, segmented, colorField } from "../widgets.js";
 import { WALLPAPERS, drawWallpaper } from "../../wallpapers.js";
@@ -40,7 +41,7 @@ export function panelAppearance(p) {
       // the system file picker + a Rust read: <input type=file> doesn't open in this web view
       const picked = await dialog.open({
         multiple: false,
-        filters: [{ name: "Images", extensions: ["png", "jpg", "jpeg", "gif", "webp", "heic", "bmp", "tiff"] }],
+        filters: [{ name: t("Images"), extensions: ["png", "jpg", "jpeg", "gif", "webp", "heic", "bmp", "tiff"] }],
       });
       const path = Array.isArray(picked) ? picked[0] : picked;
       if (!path) return;
@@ -49,7 +50,7 @@ export function panelAppearance(p) {
         change(null, () => (bg.image = url), { panel: true, track: false });
         hooks.syncBgImage?.();
       } catch (err) {
-        alert("Could not open that image: " + err);
+        alert(t("Could not open that image: {e}", { e: err }));
       }
     };
     p.append(b);

@@ -1,4 +1,5 @@
 import { invoke, dialog, listen, FILE_BROWSER } from "../tauri.js";
+import { t } from "../i18n.js";
 import { $, P, dir } from "./state.js";
 import { pause } from "./playback.js";
 import { exportMp4, exportGif, qualityBitrate } from "../export.js";
@@ -54,7 +55,7 @@ async function updateEstimates() {
   const compAudio = hasAudio ? (AUDIO_KBPS[c.audio] || 128) * 1000 : 0;
   const comp = ((rate + compAudio) * dur) / 8;
   const pct = Math.max(0, Math.round((1 - comp / original) * 100));
-  $("estCompressed").textContent = `≈ ${fmt(comp)}  (${pct}% smaller)`;
+  $("estCompressed").textContent = `≈ ${fmt(comp)}  ` + t("({pct}% smaller)", { pct });
   $("estTotal").textContent = "≈ " + fmt(original + comp);
 }
 
@@ -112,7 +113,7 @@ async function run() {
   const scale = doCompress ? 0.55 : 1;
   const onProgress = (f, text) => {
     $("expBar").style.width = Math.round(f * scale * 100) + "%";
-    $("expText").textContent = (doCompress ? "Step 1 of 2 · " : "") + text;
+    $("expText").textContent = (doCompress ? t("Step 1 of 2 · ") : "") + text;
   };
   let unlisten = null;
   let rawPath = null;
@@ -126,13 +127,13 @@ async function run() {
     if (ext === "gif") await exportGif(common);
     else await exportMp4({ ...common, fps: exp.fps, motionBlur: exp.blur ? 0.8 : 0, codec: exp.codec, quality });
 
-    let summary = `Saved! Revealing in ${FILE_BROWSER}…`;
+    let summary = t("Saved! Revealing in {app}…", { app: t(FILE_BROWSER) });
     let finalPath = path;
     if (doCompress) {
       const c = COMPRESS[exp.cpreset];
       unlisten = await listen("compress-progress", (e) => {
         $("expBar").style.width = Math.round((0.55 + e.payload * 0.45) * 100) + "%";
-        $("expText").textContent = `Step 2 of 2 · Compressing… ${Math.round(e.payload * 100)}%`;
+        $("expText").textContent = t("Step 2 of 2 · Compressing… {pct}%", { pct: Math.round(e.payload * 100) });
       });
       $("expText").textContent = "Step 2 of 2 · Compressing…";
       const info = await invoke("probe_video", { path: rawPath });
@@ -142,14 +143,14 @@ async function run() {
       if (!exp.keep) await invoke("remove_file", { path: rawPath }).catch(() => {});
       rawPath = null;
       finalPath = compressedPath;
-      summary = `Saved! ${fmtMB(info.fileSize)} → ${fmtMB(size)} · revealing in ${FILE_BROWSER}…`;
+      summary = t("Saved! {a} → {b} · revealing in {app}…", { a: fmtMB(info.fileSize), b: fmtMB(size), app: t(FILE_BROWSER) });
     }
     $("expBar").style.width = "100%";
     $("expText").textContent = summary;
     invoke("reveal_in_finder", { path: finalPath });
     setTimeout(close, 1400);
   } catch (e) {
-    $("expText").textContent = exp.cancel ? "Cancelled" : "Export failed: " + (e?.message || e);
+    $("expText").textContent = exp.cancel ? "Cancelled" : t("Export failed: {e}", { e: e?.message || e });
     if (rawPath && rawPath !== path && !exp.keep) invoke("remove_file", { path: rawPath }).catch(() => {});
   } finally {
     unlisten?.();

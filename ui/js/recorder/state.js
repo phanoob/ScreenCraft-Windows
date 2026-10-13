@@ -1,4 +1,6 @@
 // Shared recorder state + persisted preferences.
+import { t } from "../i18n.js";
+
 export const $ = (id) => document.getElementById(id);
 
 export const BAR_W = 1100;
@@ -57,7 +59,7 @@ export function savePrefs() {
 let errTimer = null;
 export function showError(msg) {
   const e = $("err");
-  e.textContent = msg ? msg + "  (click to dismiss)" : "";
+  e.textContent = msg ? t(msg) + "  " + t("(click to dismiss)") : "";
   e.style.display = msg ? "flex" : "none";
   e.onclick = () => (e.style.display = "none");
   clearTimeout(errTimer);

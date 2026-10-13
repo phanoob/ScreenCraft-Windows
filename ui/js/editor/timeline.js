@@ -1,6 +1,7 @@
 // Timeline rendering and interaction. Dragging touches only the dragged
 // element's style; the DOM is rebuilt only when the edit is committed.
 import { invoke } from "../tauri.js";
+import { t } from "../i18n.js";
 import { $, S, P, dir, uid, clamp, fmt, hooks } from "./state.js";
 import { sliceLen, outDuration, outToSrc, spansOut } from "./timemap.js";
 import { addMusic, clips as musicClips, drawWave, removeMusicClip } from "./music.js";
@@ -61,7 +62,7 @@ export function renderTimeline() {
       el.className = "block zoom" + (z.isDisabled ? " disabled" : "") + (S.selected?.type === "zoom" && S.selected.id === z.id ? " sel" : "");
       el.style.left = a * pxPerMs + "px";
       el.style.width = Math.max(14, (b - a) * pxPerMs - 2) + "px";
-      el.innerHTML = `<div class="h l"></div><span>Zoom</span><span class="t">${z.zoom.toFixed(1)}× · ${z.kind === "manual" ? "Manual" : "Auto"}</span><div class="h r"></div>`;
+      el.innerHTML = `<div class="h l"></div><span>Zoom</span><span class="t">${z.zoom.toFixed(1)}× · ${t(z.kind === "manual" ? "Manual" : "Auto")}</span><div class="h r"></div>`;
       el.onpointerdown = (e) => beginZoomDrag(e, z, el, pxPerMs, a, b);
       zf.appendChild(el);
     }
@@ -85,7 +86,7 @@ export function renderTimeline() {
       el.style.left = c.offsetMs * pxPerMs + "px";
       el.style.width = Math.max(14, c.durMs * pxPerMs - 2) + "px";
       el.dataset.id = c.id;
-      el.innerHTML = `<div class="h l"></div><canvas class="wave"></canvas><span class="mname">♪ ${c.name || "Music"}</span><div class="h r"></div>`;
+      el.innerHTML = `<div class="h l"></div><canvas class="wave"></canvas><span class="mname">♪ ${c.name || t("Music")}</span><div class="h r"></div>`;
       el.onpointerdown = (e) => beginMusicDrag(e, c, el, pxPerMs);
       mf.appendChild(el);
     }

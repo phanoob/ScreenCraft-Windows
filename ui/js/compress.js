@@ -1,4 +1,5 @@
 import { invoke, listen, dialog, FILE_BROWSER } from "./tauri.js";
+import { t } from "./i18n.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -41,7 +42,8 @@ function buildPresets() {
     const b = document.createElement("button");
     b.className = "preset";
     b.dataset.name = p.name;
-    b.innerHTML = `${p.name}<small>${p.sub}</small>`;
+    // "quality" in its own text node, so the page translation picks it up
+    b.innerHTML = `${p.name}<small>${p.sub.replace("quality", "<span>quality</span>")}</small>`;
     b.onclick = () => applyPreset(p);
     box.appendChild(b);
   }
@@ -69,7 +71,7 @@ async function update() {
   if (src.videoKbps > 0) rate = Math.min(rate, src.videoKbps * 1000 * 0.98);
   const audioKbps = !src.hasAudio || o.audio === "none" ? 0 : o.audio === "keep" ? 192 : parseInt(o.audio.replace("aac", ""), 10);
   const bytes = ((rate + audioKbps * 1000) * src.durationS) / 8;
-  $("estSize").textContent = `${fmtSize(bytes)}${src.fileSize ? ` (${Math.max(0, Math.round((1 - bytes / src.fileSize) * 100))}% smaller)` : ""}`;
+  $("estSize").textContent = `${fmtSize(bytes)}${src.fileSize ? " " + t("({pct}% smaller)", { pct: Math.max(0, Math.round((1 - bytes / src.fileSize) * 100)) }) : ""}`;
   $("estRate").textContent = (rate / 1e6).toFixed(2) + " Mbps";
 }
 
@@ -78,7 +80,7 @@ async function loadFile(path) {
     const p = await invoke("probe_video", { path });
     src = { ...p, path };
     $("srcName").textContent = path.split("/").pop();
-    $("srcInfo").textContent = `${p.width}×${p.height} · ${p.fps.toFixed(0)} fps · ${fmtDur(p.durationS)} · ${fmtSize(p.fileSize)} · ${Math.round(p.videoKbps)} kbps${p.hasAudio ? " · audio" : ""}`;
+    $("srcInfo").textContent = `${p.width}×${p.height} · ${p.fps.toFixed(0)} fps · ${fmtDur(p.durationS)} · ${fmtSize(p.fileSize)} · ${Math.round(p.videoKbps)} kbps${p.hasAudio ? " · " + t("audio") : ""}`;
     $("btnStart").disabled = false;
     $("btnReveal").hidden = true;
     if (!document.querySelector(".preset.on")) applyPreset(PRESETS[0]);
@@ -86,14 +88,14 @@ const presetInput = new URLSearchParams(location.search).get("input");
 if (presetInput) loadFile(presetInput);
     update();
   } catch (e) {
-    $("srcInfo").textContent = "Could not read that file: " + e;
+    $("srcInfo").textContent = t("Could not read that file: {e}", { e });
   }
 }
 
 async function chooseFile() {
   const p = await dialog.open({
     multiple: false,
-    filters: [{ name: "Video", extensions: ["mp4", "mov", "m4v", "mkv", "avi", "webm", "mpg", "mpeg"] }],
+    filters: [{ name: t("Video"), extensions: ["mp4", "mov", "m4v", "mkv", "avi", "webm", "mpg", "mpeg"] }],
   });
   if (p) loadFile(Array.isArray(p) ? p[0] : p);
 }
@@ -117,10 +119,10 @@ async function start() {
     const secs = ((performance.now() - t0) / 1000).toFixed(0);
     const pct = src.fileSize ? Math.round((1 - size / src.fileSize) * 100) : 0;
     $("fill").style.width = "100%";
-    $("status").textContent = `Done in ${secs}s — ${fmtSize(src.fileSize)} → ${fmtSize(size)} (${pct}% smaller)`;
+    $("status").textContent = t("Done in {secs}s — {a} → {b} ({pct}% smaller)", { secs, a: fmtSize(src.fileSize), b: fmtSize(size), pct });
     $("btnReveal").hidden = false;
   } catch (e) {
-    $("status").textContent = String(e) === "cancelled" ? "Cancelled" : "Failed: " + e;
+    $("status").textContent = String(e) === "cancelled" ? "Cancelled" : t("Failed: {e}", { e });
   } finally {
     running = false;
     $("btnStart").disabled = false;
@@ -141,7 +143,7 @@ $("btnCancel").onclick = () => invoke("cancel_compress");
 $("btnReveal").onclick = () => lastOutput && invoke("reveal_in_finder", { path: lastOutput });
 await listen("compress-progress", (e) => {
   $("fill").style.width = Math.round(e.payload * 100) + "%";
-  $("status").textContent = `Compressing… ${Math.round(e.payload * 100)}%`;
+  $("status").textContent = t("Compressing… {pct}%", { pct: Math.round(e.payload * 100) });
 });
 await listen("tauri://drag-drop", (e) => {
   $("drag").classList.remove("on");
@@ -153,4 +155,9 @@ await listen("tauri://drag-leave", () => $("drag").classList.remove("on"));
 applyPreset(PRESETS[0]);
 const presetInput = new URLSearchParams(location.search).get("input");
 if (presetInput) loadFile(presetInput);
-$("btnReveal").textContent = `Show in ${FILE_BROWSER}`;
+const revealLabel = () => ($("btnReveal").textContent = t("Show in {app}", { app: t(FILE_BROWSER) }));
+revealLabel();
+addEventListener("sc-langchange", () => {
+  revealLabel();
+  update();
+});

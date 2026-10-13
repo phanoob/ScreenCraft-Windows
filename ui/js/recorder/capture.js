@@ -1,5 +1,6 @@
 // Start / stop recording (screen via Rust, camera via MediaRecorder).
 import { invoke } from "../tauri.js";
+import { t } from "../i18n.js";
 import { $, state, showError, hooks } from "./state.js";
 import { showBar, resizeBar } from "./window.js";
 import { closeMenu, isMenuOpen } from "./menu.js";
@@ -16,7 +17,7 @@ let micChain = Promise.resolve();
 
 /** Record the microphone on its own so its level can be mixed independently of system audio. */
 async function startMic() {
-  if (!window.MediaRecorder) throw new Error("this web view cannot record audio");
+  if (!window.MediaRecorder) throw new Error(t("this web view cannot record audio"));
   let deviceId;
   try {
     const devs = (await navigator.mediaDevices.enumerateDevices()).filter((d) => d.kind === "audioinput");
@@ -33,7 +34,7 @@ async function startMic() {
       },
       video: false,
     }),
-    new Promise((_, rej) => setTimeout(() => rej(new Error("Microphone timed out")), 8000)),
+    new Promise((_, rej) => setTimeout(() => rej(new Error(t("Microphone timed out"))), 8000)),
   ]);
   // Always record two channels: a mono microphone is duplicated to left and right.
   const raw = stream;
@@ -83,7 +84,7 @@ async function startMic() {
 }
 
 async function startCamera() {
-  if (!window.MediaRecorder) throw new Error("this web view cannot record camera video");
+  if (!window.MediaRecorder) throw new Error(t("this web view cannot record camera video"));
   const shared = getPreview();
   const stream = shared || (await openCameraStream());
   const candidates = [
@@ -133,7 +134,7 @@ export async function beginRecording() {
     try {
       cam = await startCamera();
     } catch (e) {
-      cameraNote = `Camera unavailable (${e?.message || e}) — recording without it.`;
+      cameraNote = t("Camera unavailable ({e}) — recording without it.", { e: e?.message || e });
     }
   }
 
@@ -142,7 +143,7 @@ export async function beginRecording() {
     try {
       mic = await startMic();
     } catch (e) {
-      cameraNote += (cameraNote ? " " : "") + `Microphone unavailable (${e?.message || e}).`;
+      cameraNote += (cameraNote ? " " : "") + t("Microphone unavailable ({e}).", { e: e?.message || e });
     }
   }
 

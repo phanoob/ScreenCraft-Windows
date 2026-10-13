@@ -1,5 +1,6 @@
 // Editor entry point: boot + event wiring. Everything else lives in sibling modules.
-import { invoke, listen, currentWindow, FILE_BROWSER, IS_WINDOWS } from "../tauri.js";
+import { invoke, listen, currentWindow, FILE_BROWSER } from "../tauri.js";
+import { t, languageItems } from "../i18n.js";
 import { $, S, P, dir, hooks, media, clamp } from "./state.js";
 import { outDuration } from "./timemap.js";
 import { change, undo, redo, updateUndo, saveNow } from "./history.js";
@@ -17,13 +18,6 @@ import { contentRect, camAt } from "../render.js";
 import { migrateMusic } from "./music.js";
 import { Strip } from "./frames.js";
 import { loadAudio } from "./audio.js";
-
-// Tooltips are written with macOS shortcuts; show the Windows ones there.
-if (IS_WINDOWS) {
-  for (const el of document.querySelectorAll("[title]")) {
-    el.title = el.title.replace("⇧⌘", "Ctrl+Shift+").replace("⌘", "Ctrl+").replace("Finder", FILE_BROWSER);
-  }
-}
 
 hooks.updateTitle = () => {
   const t = $("title");
@@ -49,6 +43,12 @@ hooks.renderTimeline = renderTimeline;
 hooks.renderPanel = renderPanel;
 hooks.scheduleTrack = scheduleTrack;
 hooks.seek = (t) => requestSeek(t);
+// rebuild what was built with t() (timeline labels, panels) in the new language
+addEventListener("sc-langchange", () => {
+  try {
+    if (P()) { renderTimeline(); renderPanel(); }
+  } catch {}
+});
 
 function syncControls() {
   $("selAspect").value = P().config.output.aspectRatio;
@@ -86,7 +86,7 @@ function guardClose() {
       try {
         await saveNow();
       } catch (err) {
-        alert("Could not save: " + err);
+        alert(t("Could not save: {e}", { e: err }));
         invoke("cancel_quit").catch(() => {});
         return;
       }
@@ -146,7 +146,9 @@ function bindUI() {
     const list = await invoke("recent_projects");
     const items = [{ header: "Projects" }];
     for (const pr of list.slice(0, 10)) items.push({ label: pr.name, run: () => invoke("open_editor", { dir: pr.dir }) });
-    items.push("-", { label: `Show this project in ${FILE_BROWSER}`, run: () => invoke("reveal_in_finder", { path: dir }) });
+    items.push("-", { label: t("Show this project in {app}", { app: t(FILE_BROWSER) }), run: () => invoke("reveal_in_finder", { path: dir }) });
+    items.push("-", { header: "Language" });
+    for (const l of languageItems()) items.push({ label: (l.checked ? "✓ " : "") + l.label, run: l.pick });
     showMenu(anchor, items);
   };
   $("btnCrop").onclick = () => { S.tab = "crop"; renderPanel(); };
@@ -193,7 +195,7 @@ function bindUI() {
     else if (mod && e.key.toLowerCase() === "z") { e.preventDefault(); e.shiftKey ? redo() : undo(); }
     else if (mod && e.key.toLowerCase() === "y") { e.preventDefault(); redo(); }
     else if (mod && e.key.toLowerCase() === "e") { e.preventDefault(); openExport(); }
-    else if (mod && e.key.toLowerCase() === "s") { e.preventDefault(); saveNow().catch((err) => alert("Could not save: " + err)); }
+    else if (mod && e.key.toLowerCase() === "s") { e.preventDefault(); saveNow().catch((err) => alert(t("Could not save: {e}", { e: err }))); }
   });
   let rz = null;
   addEventListener("resize", () => {
@@ -227,7 +229,7 @@ async function boot() {
     }
     $("prep").hidden = true;
     $("app").inert = false;
-    if (!meta?.screen) throw new Error("could not prepare the preview");
+    if (!meta?.screen) throw new Error(t("could not prepare the preview"));
     media.strips.screen = new Strip("screen", meta.screen, dir);
     media.strips.camera = P().media.camera && meta.camera ? new Strip("camera", meta.camera, dir) : null;
     const arrive = () => { if (!S.playing) requestAnimationFrame(() => hooks.draw()); };
@@ -256,7 +258,7 @@ async function boot() {
     $("prep").hidden = true;
     $("app").inert = false;
     $("loading").hidden = false;
-    $("loading").textContent = "Could not open project: " + (e?.message || e);
+    $("loading").textContent = t("Could not open project: {e}", { e: e?.message || e });
     console.error(e);
   }
 }

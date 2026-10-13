@@ -1,5 +1,6 @@
 // Camera / microphone / system-audio dropdowns.
 import { invoke } from "../tauri.js";
+import { t } from "../i18n.js";
 import { $, state, savePrefs, hooks, showError } from "./state.js";
 import { openMenu } from "./menu.js";
 
@@ -8,7 +9,7 @@ export async function cameraMenu() {
     const tmp = await navigator.mediaDevices.getUserMedia({ video: true });
     tmp.getTracks().forEach((t) => t.stop());
   } catch (e) {
-    return showError("Camera access was denied: " + e);
+    return showError(t("Camera access was denied: {e}", { e }));
   }
   const devs = (await navigator.mediaDevices.enumerateDevices()).filter((d) => d.kind === "videoinput");
   await openMenu(
@@ -57,7 +58,7 @@ export async function systemMenu() {
       { label: "Off", checked: !state.sys, onPick: () => { state.sys = false; savePrefs(); hooks.render(); } },
       {
         label: "System audio",
-        sub: "Everything your Mac is playing (all apps)",
+        sub: "Everything your computer is playing (all apps)",
         checked: state.sys,
         onPick: () => { state.sys = true; savePrefs(); hooks.render(); },
       },

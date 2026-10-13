@@ -2,6 +2,7 @@ import { masterGain, autoGain, makeLimiter, monoMix } from "./audiolevel.js";
 import { Muxer, ArrayBufferTarget } from "../vendor/mp4-muxer.mjs";
 import { GIFEncoder, quantize, applyPalette } from "../vendor/gifenc.esm.js";
 import { invoke, convertFileSrc, SC_BASE } from "./tauri.js";
+import { t as tr } from "./i18n.js";
 import { outputSize, paintFrame, camAt, lerpCam } from "./render.js";
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -169,7 +170,7 @@ async function pickCodec(W, H, fps, bitrate, want) {
       } catch {}
     }
   }
-  throw new Error("This system cannot encode video in the web view.");
+  throw new Error(tr("This system cannot encode video in the web view."));
 }
 
 /** Bits-per-pixel model shared with the Rust compressor. */
@@ -181,10 +182,10 @@ export function qualityBitrate(W, H, fps, quality, hevc) {
 }
 
 export async function exportMp4({ project, dir, path, resolution, fps, motionBlur, codec = "avc", quality = 55, onProgress, shouldCancel }) {
-  if (typeof VideoEncoder === "undefined") throw new Error("WebCodecs is not available in this web view.");
+  if (typeof VideoEncoder === "undefined") throw new Error(tr("WebCodecs is not available in this web view."));
   const { W, H } = outputSize(project, resolution);
   endPool();
-  onProgress(0, "Computing camera path…");
+  onProgress(0, tr("Computing camera path…"));
   const track = await invoke("compute_render_track", { dir, project, fps });
   const hasCam = !!project.media.camera;
 
@@ -205,7 +206,7 @@ export async function exportMp4({ project, dir, path, resolution, fps, motionBlu
   const bitrate = qualityBitrate(W, H, fps, quality, codec === "hevc");
   const { cfg: vcfg, kind: vkind } = await pickCodec(W, H, fps, bitrate, codec);
 
-  onProgress(0.02, "Preparing audio…");
+  onProgress(0.02, tr("Preparing audio…"));
   const outDurSec = track.durationMs / 1000;
   let audio = null;
   try { audio = await renderAudio(project, dir, outDurSec); } catch { audio = null; }
@@ -287,13 +288,13 @@ export async function exportMp4({ project, dir, path, resolution, fps, motionBlu
       invoke("dbg_log", { msg: `export 120 frames: wait ${(prof.wait / 120).toFixed(1)} ms, paint ${(prof.paint / 120).toFixed(1)} ms, encode ${(prof.enc / 120).toFixed(1)} ms per frame` }).catch(() => {});
       prof.wait = prof.paint = prof.enc = 0;
     }
-    if (i % 4 === 0) onProgress(0.05 + 0.85 * (i / total), `Rendering frame ${i + 1} of ${total}`);
+    if (i % 4 === 0) onProgress(0.05 + 0.85 * (i / total), tr("Rendering frame {i} of {n}", { i: i + 1, n: total }));
   }
   await venc.flush();
   venc.close();
 
   if (audio) {
-    onProgress(0.92, "Encoding audio…");
+    onProgress(0.92, tr("Encoding audio…"));
     const aenc = new AudioEncoder({
       output: (chunk, meta) => muxer.addAudioChunk(chunk, fixAudioMeta(meta)),
       error: (e) => (encError = e),
@@ -318,8 +319,8 @@ export async function exportMp4({ project, dir, path, resolution, fps, motionBlu
   }
   if (encError) throw encError;
   muxer.finalize();
-  onProgress(0.95, "Writing file…");
-  await writeFile(path, new Uint8Array(target.buffer), (f) => onProgress(0.95 + 0.05 * f, "Writing file…"));
+  onProgress(0.95, tr("Writing file…"));
+  await writeFile(path, new Uint8Array(target.buffer), (f) => onProgress(0.95 + 0.05 * f, tr("Writing file…")));
   endPool();
   onProgress(1, "Done");
 }
@@ -329,7 +330,7 @@ export async function exportGif({ project, dir, path, resolution, onProgress, sh
   const res = Math.min(resolution, 540);
   const { W, H } = outputSize(project, res);
   endPool();
-  onProgress(0, "Computing camera path…");
+  onProgress(0, tr("Computing camera path…"));
   const track = await invoke("compute_render_track", { dir, project, fps });
   const hasCam = !!project.media.camera;
   let bgImage = null;
@@ -356,11 +357,11 @@ export async function exportGif({ project, dir, path, resolution, onProgress, sh
     const palette = quantize(data, 256, { format: "rgb565" });
     const index = applyPalette(data, palette, "rgb565");
     gif.writeFrame(index, W, H, { palette, delay, repeat: 0 });
-    if (i % 3 === 0) onProgress(0.9 * (i / track.count), `Encoding frame ${i + 1} of ${track.count}`);
+    if (i % 3 === 0) onProgress(0.9 * (i / track.count), tr("Encoding frame {i} of {n}", { i: i + 1, n: track.count }));
     if (i % 8 === 0) await sleep(0);
   }
   gif.finish();
-  onProgress(0.95, "Writing file…");
+  onProgress(0.95, tr("Writing file…"));
   await writeFile(path, gif.bytes());
   endPool();
   onProgress(1, "Done");

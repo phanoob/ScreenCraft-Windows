@@ -16,7 +16,7 @@
         <svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
       </button>
     </div>
-    <div class="title" id="title">Untitled</div>
+    <div class="title" id="title" translate="no">Untitled</div>
     <div class="top-right">
       <button class="icon-btn" id="btnUndo" title="Undo (⌘Z)"><svg viewBox="0 0 24 24"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 010 12h-3"/></svg></button>
       <button class="icon-btn" id="btnRedo" title="Redo (⇧⌘Z)"><svg viewBox="0 0 24 24"><path d="M15 14l5-5-5-5"/><path d="M20 9H10a6 6 0 000 12h3"/></svg></button>
@@ -98,7 +98,7 @@
 
 <div id="saveAsk" hidden>
   <div class="ask-card">
-    <h3>Save changes to “<span id="saveAskName"></span>”?</h3>
+    <h3>Save changes to “<span id="saveAskName" translate="no"></span>”?</h3>
     <p>Your edits will be lost if you don't save them.</p>
     <div class="ask-btns">
       <button id="askDiscard" class="btn-line">Don't Save</button>
@@ -157,6 +157,7 @@
   </div>
 </div>
 <div id="menu" hidden></div>
+<script type="module" src="js/i18n.js"></script>
 <script type="module" src="js/editor/main.js"></script>
 </body>
 </html>

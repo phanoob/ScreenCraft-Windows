@@ -14,6 +14,8 @@ use std::sync::Mutex;
 pub struct Settings {
     /// Where new recordings are written. Defaults to ~/ScreenCraft Projects.
     pub projects_dir: Option<String>,
+    /// UI language picked in the app ("en" | "fr" | "de"); the system's by default.
+    pub language: Option<String>,
 }
 
 pub struct AppState {

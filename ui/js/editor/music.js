@@ -1,6 +1,7 @@
 // Background music: clips of audio files placed on the edited timeline.
 // scene.musicClips = [{ id, file, name, offsetMs, inMs, durMs, fileDurMs }]
 import { invoke, dialog, convertFileSrc } from "../tauri.js";
+import { t } from "../i18n.js";
 import { S, P, dir, uid, hooks } from "./state.js";
 import { getMusicBuffer } from "./audio.js";
 import { change } from "./history.js";
@@ -76,7 +77,7 @@ export async function drawWave(canvas, clip) {
 export async function addMusic() {
   const picked = await dialog.open({
     multiple: false,
-    filters: [{ name: "Audio", extensions: ["mp3", "m4a", "aac", "wav", "aif", "aiff", "caf", "flac", "ogg"] }],
+    filters: [{ name: t("Audio"), extensions: ["mp3", "m4a", "aac", "wav", "aif", "aiff", "caf", "flac", "ogg"] }],
   });
   const path = Array.isArray(picked) ? picked[0] : picked;
   if (!path) return;
@@ -91,7 +92,7 @@ export async function addMusic() {
     a.onerror = () => res(0);
   });
   if (!durationMs) {
-    alert("That audio file couldn't be read.");
+    alert(t("That audio file couldn't be read."));
     return;
   }
   const clip = {

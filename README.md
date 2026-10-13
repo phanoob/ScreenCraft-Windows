@@ -1,5 +1,7 @@
 # ScreenCraft
 
+**English** · [Français](README.fr.md)
+
 A screen recorder and video editor for macOS and Windows, written in Rust. Record your display,
 a window or an area (with an optional camera bubble, microphone and system audio),
 then turn the raw capture into a polished video: smooth automatic zooms that follow
@@ -81,9 +83,15 @@ meters, resolution and frame rate, and the project list.
   the choice to keep the original, the compressed copy, or both.
 - A standalone **Compress Video…** tool for any video file.
 
+**Languages**
+- The interface is available in English, French and German. It follows the system
+  language; change it under **Language** in the Projects menu (recorder bar or editor).
+
 ## Install
 
 ScreenCraft is built from source; there is no signed release download yet.
+
+### macOS
 
 **Requirements**
 - macOS 15 (Sequoia) or newer (developed and tested on Apple silicon)
@@ -124,8 +132,8 @@ permissions persist across rebuilds.
 - The WebView2 runtime (preinstalled on Windows 11)
 
 ```powershell
-git clone https://github.com/MarshallNickolauson/ScreenCraft.git
-cd ScreenCraft
+git clone https://github.com/phanoob/ScreenCraft-Windows.git
+cd ScreenCraft-Windows
 
 .\scripts\build-windows.ps1            # builds dist\ScreenCraft.exe
 .\scripts\build-windows.ps1 -Install   # also installs it with a Start menu shortcut
@@ -161,7 +169,7 @@ clicking the title in the editor.
 | --- | --- | --- |
 | `screencraft-core` | `crates/core` | Pure Rust: project model, spring physics, timeline mapping, auto-zoom generation and the per-frame camera / cursor render track. Unit tested. |
 | App shell | `src-tauri` | Tauri 2 app: ScreenCaptureKit capture, input and caret tracking, project IO, native preview proxy and frame server, audio levelling, AVFoundation compression, windows and menus. |
-| UI | `ui` | Plain ES modules, no bundler: recorder bar, editor, canvas compositor and timeline. Exports with WebCodecs. |
+| UI | `ui` | Plain ES modules, no bundler: recorder bar, editor, canvas compositor and timeline. Exports with WebCodecs. Translations in `ui/js/locales` (see `ui/js/i18n.js`). |
 | Windows back end | `src-tauri/src/win` | Swapped in one-for-one for the macOS modules: Windows Graphics Capture (`windows-capture`) + Media Foundation H.264/AAC for recording, WASAPI loopback for system audio, Win32 hooks and UI Automation for input and caret tracking, Media Foundation decoding for proxies, export frames and compression. |
 
 Some details worth knowing:

@@ -19,6 +19,7 @@ mod srcframes;
 #[cfg_attr(windows, path = "win/meter.rs")]
 mod meter;
 mod state;
+mod tray;
 #[cfg(windows)]
 mod win;
 mod windows;
@@ -27,8 +28,6 @@ use commands::permissions::all_required_granted;
 use state::{load_settings, AppState};
 use std::fs;
 use std::sync::Mutex;
-use tauri::menu::{Menu, MenuItem};
-use tauri::tray::TrayIconBuilder;
 use tauri::{Emitter, Manager};
 use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState};
 
@@ -189,35 +188,11 @@ fn main() {
             windows::show_area_frame,
             windows::hide_area_frame,
             windows::quit_app,
+            tray::set_language,
         ])
         .setup(move |app| {
             let _ = app.global_shortcut().register(toggle);
-            let new_rec = MenuItem::with_id(app, "new", "New Recording", true, Some("CmdOrCtrl+Shift+2"))?;
-            let compress = MenuItem::with_id(app, "compress", "Compress Video…", true, None::<&str>)?;
-            let perms = MenuItem::with_id(app, "perms", "Permissions…", true, None::<&str>)?;
-            let stop = MenuItem::with_id(app, "stop", "Stop Recording", true, None::<&str>)?;
-            let quit = MenuItem::with_id(app, "quit", "Quit ScreenCraft", true, Some("CmdOrCtrl+Q"))?;
-            let menu = Menu::with_items(app, &[&new_rec, &compress, &perms, &stop, &quit])?;
-            TrayIconBuilder::with_id("tray")
-                .icon(app.default_window_icon().cloned().ok_or("no icon")?)
-                .menu(&menu)
-                .on_menu_event(|app, event| match event.id().as_ref() {
-                    "new" => {
-                        let _ = windows::show_recorder_window(app);
-                    }
-                    "perms" => {
-                        let _ = windows::show_permissions_window(app);
-                    }
-                    "compress" => {
-                        let _ = windows::show_compressor_window(app, None);
-                    }
-                    "stop" => {
-                        let _ = app.emit("stop-record", ());
-                    }
-                    "quit" => windows::request_quit(app),
-                    _ => {}
-                })
-                .build(app)?;
+            tray::build(app)?;
             let state = app.state::<AppState>();
             fs::create_dir_all(state.projects_root()).ok();
             if all_required_granted() {
