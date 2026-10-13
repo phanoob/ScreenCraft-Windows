@@ -15,6 +15,9 @@ tauri-plugin-opener = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 screencraft-core = { path = "../crates/core" }
+symphonia = { version = "0.6.1", features = ["aac", "isomp4", "mp3", "wav", "pcm"] }
+
+[target.'cfg(target_os = "macos")'.dependencies]
 screencapturekit = { version = "11", features = ["macos_15_0"] }
 core-graphics = "0.25"
 objc2 = "0.6"
@@ -25,5 +28,30 @@ objc2-av-foundation = { version = "0.3", features = ["objc2-core-media", "objc2-
 objc2-core-media = { version = "0.3.2", features = ["CMTime", "CMSampleBuffer", "CMFormatDescription", "objc2-core-video"] }
 objc2-core-video = { version = "0.3", features = ["CVPixelBuffer", "CVImageBuffer", "CVBuffer", "CVReturn"] }
 objc2-foundation = "0.3.2"
-symphonia = { version = "0.6.1", features = ["aac", "isomp4", "mp3", "wav", "pcm"] }
 foreign-types-shared = "0.3"
+
+[target.'cfg(windows)'.dependencies]
+windows-capture = "2.0.1"
+webview2-com = "0.39"
+jpeg-encoder = { version = "0.7", features = ["simd"] }
+rayon = "1"
+windows = { version = "0.62", features = [
+    "Win32_Foundation",
+    "Win32_Graphics_Dwm",
+    "Win32_Graphics_Gdi",
+    "Win32_Media_Audio",
+    "Win32_Media_KernelStreaming",
+    "Win32_Media_MediaFoundation",
+    "Win32_System_Com",
+    "Win32_System_Com_StructuredStorage",
+    "Win32_System_Ole",
+    "Win32_System_Registry",
+    "Win32_System_SystemInformation",
+    "Win32_System_Threading",
+    "Win32_System_Variant",
+    "Win32_UI_Accessibility",
+    "Win32_UI_HiDpi",
+    "Win32_UI_Input_KeyboardAndMouse",
+    "Win32_UI_Shell",
+    "Win32_UI_WindowsAndMessaging",
+] }

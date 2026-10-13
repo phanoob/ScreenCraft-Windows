@@ -1,16 +1,26 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+// Platform back ends: each `win/` file replaces its macOS namesake one-for-one.
+#[cfg_attr(windows, path = "win/ax.rs")]
 mod ax;
+#[cfg_attr(windows, path = "win/capture.rs")]
 mod capture;
 mod commands;
+#[cfg_attr(windows, path = "win/compress.rs")]
 mod compress;
+#[cfg_attr(windows, path = "win/inputlog.rs")]
 mod inputlog;
+#[cfg_attr(windows, path = "win/jpegio.rs")]
 mod jpegio;
 mod levelmic;
 mod proxy;
+#[cfg_attr(windows, path = "win/srcframes.rs")]
 mod srcframes;
+#[cfg_attr(windows, path = "win/meter.rs")]
 mod meter;
 mod state;
+#[cfg(windows)]
+mod win;
 mod windows;
 
 use commands::permissions::all_required_granted;
@@ -23,8 +33,10 @@ use tauri::{Emitter, Manager};
 use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState};
 
 fn main() {
-    let toggle = Shortcut::new(Some(Modifiers::SUPER | Modifiers::SHIFT), Code::Digit2);
-    tauri::Builder::default()
+    // ⌘⇧2 on macOS; Ctrl+Shift+2 on Windows (Win+Shift+digit belongs to the taskbar)
+    let primary = if cfg!(target_os = "macos") { Modifiers::SUPER } else { Modifiers::CONTROL };
+    let toggle = Shortcut::new(Some(primary | Modifiers::SHIFT), Code::Digit2);
+    let builder = tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .plugin(
@@ -77,7 +89,11 @@ fn main() {
             } else {
                 respond(None);
             }
-        })
+        });
+    // The app menu lives in the macOS menu bar; on Windows it would become a menu
+    // strip inside every window, so it is left out (the tray menu has Quit).
+    #[cfg(target_os = "macos")]
+    let builder = builder
         .menu(|handle| {
             use tauri::menu::{Menu, MenuItem, MenuItemKind};
             let menu = Menu::default(handle)?;
@@ -99,7 +115,8 @@ fn main() {
             if event.id() == "sc-quit" {
                 windows::request_quit(app);
             }
-        })
+        });
+    builder
         .on_window_event(|window, event| {
             if let tauri::WindowEvent::Destroyed = event {
                 windows::on_window_destroyed(window.app_handle(), window.label());
@@ -192,7 +209,7 @@ fn main() {
                         let _ = windows::show_permissions_window(app);
                     }
                     "compress" => {
-                        let _ = windows::show_compressor(app.clone(), None);
+                        let _ = windows::show_compressor_window(app, None);
                     }
                     "stop" => {
                         let _ = app.emit("stop-record", ());

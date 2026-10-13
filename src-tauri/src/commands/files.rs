@@ -5,7 +5,20 @@ use tauri::State;
 
 #[tauri::command]
 pub fn reveal_in_finder(path: String) {
+    #[cfg(target_os = "macos")]
     let _ = std::process::Command::new("open").arg("-R").arg(path).spawn();
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::CommandExt;
+        // explorer wants backslashes, and the /select, argument unquoted before the path
+        let p = path.replace('/', "\\");
+        let p = std::path::Path::new(&p);
+        let _ = if p.is_dir() {
+            std::process::Command::new("explorer").arg(p).spawn()
+        } else {
+            std::process::Command::new("explorer").raw_arg(format!("/select,\"{}\"", p.display())).spawn()
+        };
+    }
 }
 
 #[tauri::command]
@@ -41,15 +54,16 @@ pub fn remove_file(path: String) -> CmdResult<()> {
     fs::remove_file(&path).map_err(|e| e.to_string())
 }
 
-/// Where the export save sheet opens: ~/Movies when it exists, otherwise ~/Documents.
+/// Where the export save sheet opens: ~/Movies (Videos on Windows) when it exists,
+/// otherwise ~/Documents.
 #[tauri::command]
 pub fn default_export_dir() -> String {
-    let home = std::env::var("HOME").unwrap_or_else(|_| ".".into());
-    let movies = std::path::Path::new(&home).join("Movies");
+    let home = crate::state::home();
+    let movies = home.join(if cfg!(windows) { "Videos" } else { "Movies" });
     if movies.is_dir() {
         movies.to_string_lossy().into()
     } else {
-        format!("{home}/Documents")
+        home.join("Documents").to_string_lossy().into()
     }
 }
 

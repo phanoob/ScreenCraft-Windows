@@ -29,11 +29,16 @@ pub struct AppState {
 
 pub type CmdResult<T> = Result<T, String>;
 
-fn home() -> PathBuf {
-    PathBuf::from(std::env::var("HOME").unwrap_or_else(|_| ".".into()))
+pub fn home() -> PathBuf {
+    let var = if cfg!(windows) { "USERPROFILE" } else { "HOME" };
+    PathBuf::from(std::env::var(var).unwrap_or_else(|_| ".".into()))
 }
 
 pub fn settings_path() -> PathBuf {
+    #[cfg(windows)]
+    if let Ok(appdata) = std::env::var("APPDATA") {
+        return PathBuf::from(appdata).join("ScreenCraft").join("settings.json");
+    }
     home().join("Library/Application Support/ScreenCraft/settings.json")
 }
 
@@ -66,6 +71,14 @@ impl AppState {
     }
 }
 
+#[cfg(windows)]
+pub fn timestamp() -> String {
+    // local time; "." instead of ":" keeps it usable in file names
+    let t = unsafe { windows::Win32::System::SystemInformation::GetLocalTime() };
+    format!("{:04}-{:02}-{:02} {:02}.{:02}.{:02}", t.wYear, t.wMonth, t.wDay, t.wHour, t.wMinute, t.wSecond)
+}
+
+#[cfg(not(windows))]
 pub fn timestamp() -> String {
     unsafe {
         let t = libc::time(std::ptr::null_mut());

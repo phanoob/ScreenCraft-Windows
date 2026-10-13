@@ -110,11 +110,11 @@ async function ensurePermissions() {
     return false;
   }
   if (state.camera && ["denied", "restricted"].includes(p.camera)) {
-    showError("Camera access is off. Open Permissions from the menu-bar icon to fix it.");
+    showError("Camera access is off. Open Permissions from the ScreenCraft tray icon to fix it.");
     return false;
   }
   if (state.mic && ["denied", "restricted"].includes(p.microphone)) {
-    showError("Microphone access is off. Open Permissions from the menu-bar icon to fix it.");
+    showError("Microphone access is off. Open Permissions from the ScreenCraft tray icon to fix it.");
     return false;
   }
   return true;

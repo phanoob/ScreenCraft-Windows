@@ -19,6 +19,33 @@ const OUT_NAME: &str = "mic-leveled-v2.wav";
 
 /// Returns (mono samples, sample rate).
 fn decode_mono(path: &Path) -> Result<(Vec<f32>, u32), String> {
+    let r = decode_mono_symphonia(path);
+    // Chromium's MediaRecorder writes AAC headers symphonia rejects; Media Foundation reads them
+    #[cfg(windows)]
+    if r.is_err() {
+        return decode_mono_mf(path);
+    }
+    r
+}
+
+#[cfg(windows)]
+fn decode_mono_mf(path: &Path) -> Result<(Vec<f32>, u32), String> {
+    crate::win::com_init();
+    let mut reader = crate::win::mf::AudioReader::open(&path.to_string_lossy())?;
+    let ch = reader.channels.max(1) as usize;
+    let mut mono = Vec::new();
+    while let Some((_, pcm)) = reader.next() {
+        for frame in pcm.chunks(ch) {
+            mono.push(frame.iter().map(|&s| s as f32 / 32768.0).sum::<f32>() / ch as f32);
+        }
+    }
+    if mono.is_empty() {
+        return Err("no audio decoded".into());
+    }
+    Ok((mono, reader.rate))
+}
+
+fn decode_mono_symphonia(path: &Path) -> Result<(Vec<f32>, u32), String> {
     let file = File::open(path).map_err(|e| e.to_string())?;
     let mss = MediaSourceStream::new(Box::new(file), Default::default());
     let mut hint = Hint::new();

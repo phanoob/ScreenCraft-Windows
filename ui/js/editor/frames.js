@@ -1,6 +1,6 @@
 // Preview frames come from the native proxy (see src-tauri/src/proxy.rs): one small
 // JPEG per frame served on sc://localhost. Nothing here plays or seeks a <video>.
-const BASE = "sc://localhost";
+import { SC_BASE as BASE } from "../tauri.js";
 const KEEP = 90; // decoded bitmaps kept around the playhead
 const MAX_INFLIGHT = 12;
 

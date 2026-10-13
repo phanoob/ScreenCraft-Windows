@@ -105,7 +105,7 @@ pub fn projects_dir(state: State<AppState>) -> String {
 pub fn rename_project(state: State<AppState>, dir: String, name: String) -> CmdResult<String> {
     let clean: String = name
         .chars()
-        .map(|c| if matches!(c, '/' | '\\' | ':' | '\0') || c.is_control() { '-' } else { c })
+        .map(|c| if matches!(c, '/' | '\\' | ':' | '\0' | '<' | '>' | '"' | '|' | '?' | '*') || c.is_control() { '-' } else { c })
         .collect();
     let clean = clean.trim().trim_start_matches('.').trim().to_string();
     if clean.is_empty() {

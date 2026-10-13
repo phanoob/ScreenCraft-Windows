@@ -1,4 +1,4 @@
-import { invoke, listen, dialog } from "./tauri.js";
+import { invoke, listen, dialog, FILE_BROWSER } from "./tauri.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -153,3 +153,4 @@ await listen("tauri://drag-leave", () => $("drag").classList.remove("on"));
 applyPreset(PRESETS[0]);
 const presetInput = new URLSearchParams(location.search).get("input");
 if (presetInput) loadFile(presetInput);
+$("btnReveal").textContent = `Show in ${FILE_BROWSER}`;

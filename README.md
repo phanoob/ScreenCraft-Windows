@@ -1,6 +1,6 @@
 # ScreenCraft
 
-A screen recorder and video editor for macOS, written in Rust. Record your display,
+A screen recorder and video editor for macOS and Windows, written in Rust. Record your display,
 a window or an area (with an optional camera bubble, microphone and system audio),
 then turn the raw capture into a polished video: smooth automatic zooms that follow
 your cursor and typing, restyled cursor, backgrounds, rounded corners, shadows,
@@ -107,6 +107,28 @@ macOS applies Screen Recording and Input Monitoring after the app restarts; the
 window offers a restart button. The app is signed ad hoc with a stable identity, so
 permissions persist across rebuilds.
 
+### Windows
+
+**Requirements**
+- Windows 10 2004 or newer (Windows 11 recommended: it can hide the yellow capture border)
+- [Rust](https://rustup.rs) (stable) and the Visual Studio Build Tools with the
+  "Desktop development with C++" workload
+- The WebView2 runtime (preinstalled on Windows 11)
+
+```powershell
+git clone https://github.com/MarshallNickolauson/ScreenCraft.git
+cd ScreenCraft
+
+.\scripts\build-windows.ps1            # builds dist\ScreenCraft.exe
+.\scripts\build-windows.ps1 -Install   # also installs it with a Start menu shortcut
+```
+
+No permissions need granting on Windows; camera and microphone follow the switches
+in Settings › Privacy & security. The recording shortcut is **Ctrl+Shift+2**, the
+other shortcuts use Ctrl where macOS uses ⌘, and the app lives in the notification
+area (system tray) instead of the menu bar. Settings are stored in
+`%APPDATA%\ScreenCraft`, exports default to the Videos folder.
+
 ## Using it
 
 1. Pick **Display / Window / Area**, choose camera and audio sources, press **Record**
@@ -132,6 +154,7 @@ clicking the title in the editor.
 | `screencraft-core` | `crates/core` | Pure Rust: project model, spring physics, timeline mapping, auto-zoom generation and the per-frame camera / cursor render track. Unit tested. |
 | App shell | `src-tauri` | Tauri 2 app: ScreenCaptureKit capture, input and caret tracking, project IO, native preview proxy and frame server, audio levelling, AVFoundation compression, windows and menus. |
 | UI | `ui` | Plain ES modules, no bundler: recorder bar, editor, canvas compositor and timeline. Exports with WebCodecs. |
+| Windows back end | `src-tauri/src/win` | Swapped in one-for-one for the macOS modules: Windows Graphics Capture (`windows-capture`) + Media Foundation H.264/AAC for recording, WASAPI loopback for system audio, Win32 hooks and UI Automation for input and caret tracking, Media Foundation decoding for proxies, export frames and compression. |
 
 Some details worth knowing:
 
@@ -163,10 +186,13 @@ MIT, see [LICENSE](LICENSE).
 
 ## Known limitations
 
-- macOS only (it depends on ScreenCaptureKit and AVFoundation).
+- macOS and Windows only (no Linux back end).
+- On Windows, the H.264 encoder caps recordings at 4096 pixels on the long side, and
+  system audio cannot leave out ScreenCraft's own sounds (macOS can).
 - Preview proxies are large (roughly 2–3 MB per second of recording); delete the
   `proxy-*` files in a project folder to reclaim space.
 - Export is not real-time; long 60 fps projects take a while.
 - Typing focus depends on the focused app exposing its text caret through
-  Accessibility; otherwise the position is estimated from keystrokes.
+  Accessibility (UI Automation on Windows); otherwise the position is estimated
+  from keystrokes.
 - No code signing or notarisation, so you build it yourself.

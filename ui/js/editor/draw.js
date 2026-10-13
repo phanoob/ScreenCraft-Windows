@@ -2,6 +2,7 @@
 import { $, S, P, TRACK_FPS, media, dir } from "./state.js";
 import { outToSrc } from "./timemap.js";
 import { outputSize, contentRect, paintFrame, camAt } from "../render.js";
+import { SC_BASE } from "../tauri.js";
 
 const canvas = $("preview");
 const ctx = canvas.getContext("2d", { alpha: false });
@@ -33,7 +34,7 @@ function scheduleHq(srcMs) {
   hqTimer = setTimeout(async () => {
     if (S.playing || S.scrubbing) return;
     try {
-      const r = await fetch(`sc://localhost/src/screen?t=${srcMs.toFixed(3)}&d=${encodeURIComponent(dir)}&q=90`);
+      const r = await fetch(`${SC_BASE}/src/screen?t=${srcMs.toFixed(3)}&d=${encodeURIComponent(dir)}&q=90`);
       if (!r.ok) return;
       const bmp = await createImageBitmap(await r.blob());
       if (S.playing || Math.abs(outToSrc(S.tOut).src - srcMs) > 0.5) {

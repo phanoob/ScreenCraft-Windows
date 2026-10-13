@@ -10,22 +10,34 @@
 
 #![allow(deprecated)]
 
+#[cfg(target_os = "macos")]
 use objc2::rc::Retained;
+#[cfg(target_os = "macos")]
 use objc2::runtime::AnyObject;
+#[cfg(target_os = "macos")]
 use objc2::AnyThread;
+#[cfg(target_os = "macos")]
 use objc2_av_foundation::{AVAssetReader, AVAssetReaderTrackOutput, AVURLAsset};
+#[cfg(target_os = "macos")]
 use objc2_core_video::{
     CVPixelBufferGetBaseAddress, CVPixelBufferGetBytesPerRow, CVPixelBufferGetHeight, CVPixelBufferGetWidth,
     CVPixelBufferLockBaseAddress, CVPixelBufferLockFlags, CVPixelBufferUnlockBaseAddress,
 };
+#[cfg(target_os = "macos")]
 use objc2_foundation::{NSDictionary, NSNumber, NSString, NSURL};
 use serde::Serialize;
+#[cfg(target_os = "macos")]
 use std::collections::BTreeMap;
 use std::fs::File;
+#[cfg(target_os = "macos")]
 use std::io::{BufWriter, Write};
 use std::path::Path;
+#[cfg(target_os = "macos")]
 use std::sync::mpsc;
 use std::sync::{Arc, Mutex};
+
+#[cfg(windows)]
+use crate::win::strip::build_strip;
 
 pub const FPS: f64 = 30.0;
 const VERSION: u32 = 5;
@@ -45,6 +57,7 @@ pub struct ProxyMeta {
     pub camera: Option<StripMeta>,
 }
 
+#[cfg(target_os = "macos")]
 /// Presentation time in seconds with 32-bit timestamp wrap-around undone.
 ///
 /// Browser-recorded fragmented MP4s sometimes carry negative composition offsets stored
@@ -61,17 +74,21 @@ pub fn unwrapped_seconds(t: objc2_core_media::CMTime) -> f64 {
     v as f64 / ts
 }
 
+#[cfg(target_os = "macos")]
 /// The raw (still wrapped) time to ask AVAssetReader for when a sample was seen at `t`.
 pub fn raw_seconds(t: objc2_core_media::CMTime) -> f64 {
     unsafe { t.seconds() }
 }
 
+#[cfg(target_os = "macos")]
 fn obj<T: objc2::Message>(r: Retained<T>) -> Retained<AnyObject> {
     unsafe { Retained::cast_unchecked(r) }
 }
+#[cfg(target_os = "macos")]
 fn num_i(v: i64) -> Retained<AnyObject> {
     obj(NSNumber::new_i64(v))
 }
+#[cfg(target_os = "macos")]
 fn dict(pairs: Vec<(&str, Retained<AnyObject>)>) -> Retained<NSDictionary<NSString, AnyObject>> {
     let keys: Vec<Retained<NSString>> = pairs.iter().map(|(k, _)| NSString::from_str(k)).collect();
     let key_refs: Vec<&NSString> = keys.iter().map(|k| &**k).collect();
@@ -79,10 +96,12 @@ fn dict(pairs: Vec<(&str, Retained<AnyObject>)>) -> Retained<NSDictionary<NSStri
     NSDictionary::from_retained_objects(&key_refs, &vals)
 }
 
+#[cfg(target_os = "macos")]
 fn encode_jpeg(bgra: Vec<u8>, w: u32, h: u32, quality: u8) -> Vec<u8> {
     crate::jpegio::encode_bgra(bgra, w as usize, h as usize, quality).unwrap_or_default()
 }
 
+#[cfg(target_os = "macos")]
 /// Decode `src` and write the strip. `target_w` is the proxy width in pixels.
 fn build_strip(
     src: &Path,
@@ -386,9 +405,24 @@ pub fn frame_bytes(dir: &str, kind: &str, n: usize) -> Option<Vec<u8>> {
     };
     let n = n.min(strip.ranges.len().checked_sub(1)?);
     let (a, b) = strip.ranges[n];
-    use std::os::unix::fs::FileExt;
     let mut buf = vec![0u8; (b - a) as usize];
-    strip.file.read_exact_at(&mut buf, a).ok()?;
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::FileExt;
+        strip.file.read_exact_at(&mut buf, a).ok()?;
+    }
+    #[cfg(windows)]
+    {
+        use std::os::windows::fs::FileExt;
+        let mut done = 0;
+        while done < buf.len() {
+            let n = strip.file.seek_read(&mut buf[done..], a + done as u64).ok()?;
+            if n == 0 {
+                return None;
+            }
+            done += n;
+        }
+    }
     Some(buf)
 }
 

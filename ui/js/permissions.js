@@ -1,4 +1,4 @@
-import { invoke, currentWindow } from "./tauri.js";
+import { invoke, currentWindow, IS_WINDOWS } from "./tauri.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -58,6 +58,11 @@ $("bSkip").onclick = async () => {
   await invoke("show_recorder");
   currentWindow().close();
 };
+// Windows needs no grant for capture, typing focus or input; only camera and mic have switches.
+if (IS_WINDOWS) {
+  for (const id of ["rowScreen", "rowAx", "rowInput"]) $(id).style.display = "none";
+  $("intro").textContent = "Recording needs no special permission on Windows. Camera and microphone follow the switches in Settings › Privacy & security.";
+}
 $("bRecheck").onclick = refresh;
 $("bRestart").onclick = () => invoke("restart_app");
 $("bContinue").onclick = async () => {

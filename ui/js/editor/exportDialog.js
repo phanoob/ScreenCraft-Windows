@@ -1,4 +1,4 @@
-import { invoke, dialog, listen } from "../tauri.js";
+import { invoke, dialog, listen, FILE_BROWSER } from "../tauri.js";
 import { $, P, dir } from "./state.js";
 import { pause } from "./playback.js";
 import { exportMp4, exportGif, qualityBitrate } from "../export.js";
@@ -126,7 +126,7 @@ async function run() {
     if (ext === "gif") await exportGif(common);
     else await exportMp4({ ...common, fps: exp.fps, motionBlur: exp.blur ? 0.8 : 0, codec: exp.codec, quality });
 
-    let summary = "Saved! Revealing in Finder…";
+    let summary = `Saved! Revealing in ${FILE_BROWSER}…`;
     let finalPath = path;
     if (doCompress) {
       const c = COMPRESS[exp.cpreset];
@@ -142,7 +142,7 @@ async function run() {
       if (!exp.keep) await invoke("remove_file", { path: rawPath }).catch(() => {});
       rawPath = null;
       finalPath = compressedPath;
-      summary = `Saved! ${fmtMB(info.fileSize)} → ${fmtMB(size)} · revealing in Finder…`;
+      summary = `Saved! ${fmtMB(info.fileSize)} → ${fmtMB(size)} · revealing in ${FILE_BROWSER}…`;
     }
     $("expBar").style.width = "100%";
     $("expText").textContent = summary;

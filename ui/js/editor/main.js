@@ -1,5 +1,5 @@
 // Editor entry point: boot + event wiring. Everything else lives in sibling modules.
-import { invoke, listen, currentWindow } from "../tauri.js";
+import { invoke, listen, currentWindow, FILE_BROWSER, IS_WINDOWS } from "../tauri.js";
 import { $, S, P, dir, hooks, media, clamp } from "./state.js";
 import { outDuration } from "./timemap.js";
 import { change, undo, redo, updateUndo, saveNow } from "./history.js";
@@ -17,6 +17,13 @@ import { contentRect, camAt } from "../render.js";
 import { migrateMusic } from "./music.js";
 import { Strip } from "./frames.js";
 import { loadAudio } from "./audio.js";
+
+// Tooltips are written with macOS shortcuts; show the Windows ones there.
+if (IS_WINDOWS) {
+  for (const el of document.querySelectorAll("[title]")) {
+    el.title = el.title.replace("⇧⌘", "Ctrl+Shift+").replace("⌘", "Ctrl+").replace("Finder", FILE_BROWSER);
+  }
+}
 
 hooks.updateTitle = () => {
   const t = $("title");
@@ -139,7 +146,7 @@ function bindUI() {
     const list = await invoke("recent_projects");
     const items = [{ header: "Projects" }];
     for (const pr of list.slice(0, 10)) items.push({ label: pr.name, run: () => invoke("open_editor", { dir: pr.dir }) });
-    items.push("-", { label: "Show this project in Finder", run: () => invoke("reveal_in_finder", { path: dir }) });
+    items.push("-", { label: `Show this project in ${FILE_BROWSER}`, run: () => invoke("reveal_in_finder", { path: dir }) });
     showMenu(anchor, items);
   };
   $("btnCrop").onclick = () => { S.tab = "crop"; renderPanel(); };
@@ -184,6 +191,7 @@ function bindUI() {
     else if (e.key === "ArrowLeft") { pause(); requestSeek(S.tOut - (e.shiftKey ? 1000 : 1000 / 30)); }
     else if (e.key === "ArrowRight") { pause(); requestSeek(S.tOut + (e.shiftKey ? 1000 : 1000 / 30)); }
     else if (mod && e.key.toLowerCase() === "z") { e.preventDefault(); e.shiftKey ? redo() : undo(); }
+    else if (mod && e.key.toLowerCase() === "y") { e.preventDefault(); redo(); }
     else if (mod && e.key.toLowerCase() === "e") { e.preventDefault(); openExport(); }
     else if (mod && e.key.toLowerCase() === "s") { e.preventDefault(); saveNow().catch((err) => alert("Could not save: " + err)); }
   });
